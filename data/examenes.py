@@ -1,420 +1,278 @@
 """
-data/examenes.py — Banco de preguntas por rol, mapa y nivel
-Sistema de ranking por puntuación acumulada
+data/examenes.py — Banco de preguntas Blood Strike v4
+Escenarios reales de combate — preguntas de alto nivel competitivo
 """
 
-# Niveles: 1=Bronce | 2=Plata | 3=Oro | 4=Diamante | 5=Elite
-# Preguntas con 4 opciones, opcion_correcta=índice 0-3
+PUNTOS_POR_RESPUESTA = 25
+BONUS_RACHA = {3: 10, 5: 25, 7: 50, 10: 100}
+NIVELES_RANKING = {
+    0:    "🥉 Bronce I",
+    300:  "🥉 Bronce II",
+    600:  "🥈 Plata I",
+    1000: "🥈 Plata II",
+    1500: "🥇 Oro I",
+    2200: "🥇 Oro II",
+    3000: "💎 Diamante I",
+    4000: "💎 Diamante II",
+    5500: "⭐ Elite",
+    7500: "👑 Pro Player",
+}
 
 PREGUNTAS = {
-    "IGL": {
-        1: [  # Bronce
-            {
-                "pregunta": "¿Cuál es la función principal del IGL en Blood Strike?",
-                "opciones": [
-                    "A) Fraggear el mayor número de kills",
-                    "B) Dar información, dictar timings y tomar decisiones tácticas",
-                    "C) Cubrir la zona trasera siempre",
-                    "D) Usar francotiradores desde lejos",
-                ],
-                "correcta": 1,
-                "explicacion": "El IGL (In-Game Leader) dirige al equipo: timings, info, rotaciones y decisiones. Los kills son secundarios.",
-            },
-            {
-                "pregunta": "Tu equipo va perdiendo 3-0 en el mapa Aldea. ¿Qué haces primero?",
-                "opciones": [
-                    "A) Cambiar completamente la estrategia sin avisar",
-                    "B) Pedir timeout, analizar qué falló y ajustar el plan",
-                    "C) Atacar más rápido para recuperar el marcador",
-                    "D) Ignorar el marcador y seguir igual",
-                ],
-                "correcta": 1,
-                "explicacion": "El IGL debe mantener la calma, analizar y comunicar cambios. El timeout mental (pausa y análisis) es clave.",
-            },
-            {
-                "pregunta": "En el mapa Desierto, ¿cuál posición es ideal para el IGL?",
-                "opciones": [
-                    "A) Siempre primera línea para ver todo",
-                    "B) Torre de agua para info panorámica y dictar desde atrás",
-                    "C) En el bunker sur esperando",
-                    "D) Cruzando el campo abierto sin cobertura",
-                ],
-                "correcta": 1,
-                "explicacion": "El IGL necesita visión amplia. Posición elevada = más info = mejores decisiones.",
-            },
-            {
-                "pregunta": "¿Qué significa 'timing de push' en Blood Strike?",
-                "opciones": [
-                    "A) La hora del día para jugar",
-                    "B) El momento exacto coordinado para que el equipo avance al mismo tiempo",
-                    "C) Pushear solo cuando quieras",
-                    "D) Esperar a que el rival venga",
-                ],
-                "correcta": 1,
-                "explicacion": "Timing = coordinación. Todos entran al mismo momento para abrumar al rival. Si uno entra solo, muere.",
-            },
-        ],
-        2: [  # Plata
-            {
-                "pregunta": "El rival siempre defiende desde el mismo ángulo en Puerto. ¿Qué haces?",
-                "opciones": [
-                    "A) Seguir atacando al mismo punto — con más jugadores",
-                    "B) Flanquear desde el almacén para romper su posición",
-                    "C) Rendirte en esa ronda",
-                    "D) Esperar 2 minutos sin moverte",
-                ],
-                "correcta": 1,
-                "explicacion": "El IGL lee patrones del rival y usa flanqueos para romper holds repetitivos. Creatividad táctica.",
-            },
-            {
-                "pregunta": "¿Qué es una 'rotación' en términos tácticos?",
-                "opciones": [
-                    "A) Girar el cuerpo en círculo",
-                    "B) Mover a jugadores de una zona a otra para responder a amenazas",
-                    "C) Cambiar de arma durante la partida",
-                    "D) Repetir la misma táctica varias veces",
-                ],
-                "correcta": 1,
-                "explicacion": "Rotar = mover recursos humanos del mapa donde no son necesarios a donde sí lo son. Clave táctica.",
-            },
-            {
-                "pregunta": "¿Cuándo debes usar un humo como IGL?",
-                "opciones": [
-                    "A) Al azar para confundir",
-                    "B) Para tapar la visión del rival en zonas clave antes de cruzar o entrar",
-                    "C) Solo al final de la ronda",
-                    "D) Nunca, son inútiles",
-                ],
-                "correcta": 1,
-                "explicacion": "Los humos tapan líneas de visión enemigas. El IGL decide cuándo y dónde se usan para maximizar su efecto.",
-            },
-        ],
-        3: [  # Oro
-            {
-                "pregunta": "Tu ancla cayó y quedan 3 vs 4. El rival tiene posición ventajosa en Aldea. ¿Qué haces?",
-                "opciones": [
-                    "A) Rush todos juntos al frente",
-                    "B) Forzar split del rival: uno distrae, dos flanquean",
-                    "C) Rendirse la ronda",
-                    "D) Esperar pasivo a que entren",
-                ],
-                "correcta": 1,
-                "explicacion": "Con desventaja numérica, dividir atención del rival es la mejor opción. El distractor sacrifica tiempo para que los otros flaqueen.",
-            },
-            {
-                "pregunta": "¿Qué es el 'mid-game reset' y cuándo lo aplicas?",
-                "opciones": [
-                    "A) Reiniciar el juego",
-                    "B) Replantear la estrategia a la mitad de la partida cuando el plan A falló",
-                    "C) Cambiar de equipo",
-                    "D) Pausar indefinidamente",
-                ],
-                "correcta": 1,
-                "explicacion": "El reset táctica ocurre cuando el plan inicial no funciona. El IGL debe adaptarse sin entrar en pánico.",
-            },
-        ],
-        4: [  # Diamante
-            {
-                "pregunta": "El rival tiene IGL muy pasivo en Desierto — espera siempre. ¿Cómo lo contrarrestas?",
-                "opciones": [
-                    "A) Ser igual de pasivo",
-                    "B) Presión constante en múltiples flancos para forzar errores y rotaciones",
-                    "C) Rush frontal masivo",
-                    "D) No hacer nada durante 3 minutos",
-                ],
-                "correcta": 1,
-                "explicacion": "Contra IGL pasivo: multi-pressure — hacer que roten, gastar utilidad, crear decisiones difíciles. Un hold es vulnerable si lo atacas desde varios ángulos.",
-            },
-        ],
-        5: [  # Elite
-            {
-                "pregunta": "Estás en la final. Marcador 3-3. Última ronda en Puerto. Tienes ventaja económica. ¿Qué compras?",
-                "opciones": [
-                    "A) Cada uno compra lo que quiera",
-                    "B) Coordinas: entry con SMG+Flash, soporte con SKS, ancla con AK47+Alambrada, IGL con M4+Humos",
-                    "C) Todos van con francotirador",
-                    "D) Ahorras el dinero",
-                ],
-                "correcta": 1,
-                "explicacion": "La gestión económica coordinada en rondas decisivas es lo que separa al IGL elite del amateur. Cada rol compra lo que su función requiere.",
-            },
-        ],
-    },
 
-    "Fragger": {
-        1: [  # Bronce
-            {
-                "pregunta": "¿Cuál es el objetivo principal del Fragger en Blood Strike?",
-                "opciones": [
-                    "A) Dar info y evitar confrontaciones",
-                    "B) Eliminar enemigos agresivamente y abrir espacio para el equipo",
-                    "C) Defender el punto B siempre",
-                    "D) Usar solo francotiradores",
-                ],
-                "correcta": 1,
-                "explicacion": "El Fragger es el principal eliminador. Su rol es abrir entradas con kills rápidos y limpios.",
-            },
-            {
-                "pregunta": "¿Qué arma es más efectiva para el Fragger en corta distancia?",
-                "opciones": [
-                    "A) Kar98k (francotirador)",
-                    "B) SMG (subfusil) como MP5 o PP-19",
-                    "C) DMR (rifle de tirador)",
-                    "D) Pistola básica",
-                ],
-                "correcta": 1,
-                "explicacion": "SMG domina en corta distancia por su DPS alto y velocidad de fuego. El Fragger vive en rangos cortos.",
-            },
-            {
-                "pregunta": "¿Qué es 'peekear' un ángulo?",
-                "opciones": [
-                    "A) Quedarse quieto detrás de cover",
-                    "B) Salir brevemente de cobertura para ver o disparar y volver",
-                    "C) Correr sin disparar",
-                    "D) Saltar continuamente",
-                ],
-                "correcta": 1,
-                "explicacion": "Peek = salida controlada de cover para tomar el duelo. El Fragger debe dominar el peek agresivo.",
-            },
-        ],
-        2: [  # Plata
-            {
-                "pregunta": "El rival está detrás de una caja en Aldea. ¿Cuál es el mejor approach?",
-                "opciones": [
-                    "A) Dispararle a la caja hasta que muera",
-                    "B) Flanquear para cambiar el ángulo y forzar que se mueva",
-                    "C) Lanzar todas las granadas a la vez",
-                    "D) Esperar que salga solo",
-                ],
-                "correcta": 1,
-                "explicacion": "El Fragger inteligente no se queda en el mismo ángulo. Flanquear fuerza al rival a reposicionarse — exponiéndose.",
-            },
-            {
-                "pregunta": "¿Qué es el 'strafe shooting' (shoot-strafe)?",
-                "opciones": [
-                    "A) Disparar parado sin moverse",
-                    "B) Disparar mientras te mueves lateralmente para ser más difícil de impactar",
-                    "C) Disparar hacia arriba",
-                    "D) Disparar solo con pistola",
-                ],
-                "correcta": 1,
-                "explicacion": "Strafe shooting = disparar+moverse lateralmente. El fragger que se mueve es más difícil de matar.",
-            },
-        ],
-        3: [  # Oro
-            {
-                "pregunta": "Vas a entrar a una habitación cerrada en Puerto. ¿Cuál es el protocolo correcto?",
-                "opciones": [
-                    "A) Entrar directo al centro",
-                    "B) Flash/Granada primero, luego entrar pegado a la pared y limpiar ángulos",
-                    "C) Lanzar todo y esperar afuera",
-                    "D) Pedir que entre otro primero",
-                ],
-                "correcta": 1,
-                "explicacion": "Protocolo de room-clear: utilidad primero (flash/frag), luego entrada pegada a pared, limpiar ángulos esquina por esquina.",
-            },
-        ],
-        4: [
-            {
-                "pregunta": "Estás 1vs1 con el IGL enemigo. Él es muy pasivo. ¿Cómo ganas el duelo?",
-                "opciones": [
-                    "A) Esperar que salga",
-                    "B) Jiggle peek para obtener info, luego peek agresivo cuando sabes su posición exacta",
-                    "C) Rush recto sin cover",
-                    "D) Usar sniper aunque estés en corta",
-                ],
-                "correcta": 1,
-                "explicacion": "Jiggle peek = peek rápido para ver sin morir, obtienes info de posición, luego el peek definitivo con ventaja de info.",
-            },
-        ],
-        5: [
-            {
-                "pregunta": "Tu equipo necesita que abras site A en Desierto. Hay 2 rivales defendiendo. ¿Cuál es tu secuencia?",
-                "opciones": [
-                    "A) Rush solo inmediatamente",
-                    "B) Coordinás con IGL: humo del IGL cubre ángulo derecho, flasheas el izquierdo, entras por la roca central y limpias primero al que esté más expuesto",
-                    "C) Pides a otro que entre primero",
-                    "D) Disparas desde lejos sin entrar",
-                ],
-                "correcta": 1,
-                "explicacion": "El Fragger elite trabaja en sintonía con el equipo. Utilidad + timing + ángulo de entrada = entry limpio con alta probabilidad de sobrevivir.",
-            },
-        ],
-    },
+"IGL": {
+    1: [
+        {"pregunta": "Ronda 1 TCT — Tu equipo tiene pistolas. El rival rushea por centro. ¿Qué ordenas?",
+         "opciones": ["A) Rush total al encuentro", "B) Retroceder a posición con cover y esperar el peek", "C) Dispersarse individualmente", "D) Tirar humo y retirarse al spawn"],
+         "correcta": 1, "explicacion": "Con pistolas contra rifles, la posición lo es todo. Cover y esperar el peek te da la ventaja del ángulo."},
+        {"pregunta": "Van 3-0 abajo en TCT. El equipo está tilteado. ¿Tu primera acción como IGL?",
+         "opciones": ["A) Gritar y presionar más", "B) Pausa táctica: calmar al equipo y cambiar estrategia", "C) Seguir igual", "D) Dejar que cada quien juegue solo"],
+         "correcta": 1, "explicacion": "3-0 abajo significa que la estrategia falló. El IGL debe resetear emocionalmente al equipo antes de cambiar táctica."},
+        {"pregunta": "Tu fragger murió abriendo. Quedas 4v5. ¿Qué haces?",
+         "opciones": ["A) Rush inmediato con los 4", "B) Reagrupar y buscar una pelea 2v2 limpia", "C) Jugar individual cada uno", "D) Abandonar la ronda"],
+         "correcta": 1, "explicacion": "4v5 no significa rendirse. Reagrupar y crear pelea limpia 2v2 o 3v3 es más efectivo que el rush desesperado."},
+        {"pregunta": "¿Cuándo es correcto cambiar de estrategia a mitad de una ronda?",
+         "opciones": ["A) Nunca", "B) Cuando recibes info de que el rival cambió de posición", "C) Siempre que el equipo quiera", "D) Solo si van perdiendo"],
+         "correcta": 1, "explicacion": "La adaptación en tiempo real es la marca de un buen IGL. Info de rotación rival justifica ajustar la estrategia."},
+        {"pregunta": "¿Cuál es el error más común de un IGL novato en Blood Strike?",
+         "opciones": ["A) Comunicar demasiado", "B) Llamar rushs sin info y no adaptar la estrategia", "C) Cuidar demasiado al equipo", "D) Usar muchas utilidades"],
+         "correcta": 1, "explicacion": "El IGL novato rushea por impulso, no por táctica. Info y adaptación son más valiosas que agresividad ciega."},
+        {"pregunta": "¿Qué significa hacer un 'split push' en Blood Strike?",
+         "opciones": ["A) Todos atacan por el mismo lado", "B) Dos jugadores atacan por flancos distintos simultáneamente", "C) El equipo se retira", "D) El IGL juega solo"],
+         "correcta": 1, "explicacion": "Split push divide la atención rival. Fuerza al defensor a elegir qué flanco cubrir, creando una apertura."},
+        {"pregunta": "En BE, ¿cuál es la responsabilidad principal del IGL en el círculo final?",
+         "opciones": ["A) Hacer la mayor cantidad de kills", "B) Decidir posición, timing de pelea y uso de utilidades según el círculo", "C) Dejar que el fragger decida", "D) Retirarse al borde del círculo"],
+         "correcta": 1, "explicacion": "En el círculo final de BE, la posición lo decide todo. El IGL lee el círculo, elige cover y decide si esperar o atacar."},
+    ],
+    2: [
+        {"pregunta": "Última ronda TCT, 5-5, rival con ventaja económica. ¿Qué estrategia usas?",
+         "opciones": ["A) Comprar lo mejor e improvisar", "B) Control lento — tomar posiciones y no regalar duelos", "C) Rush total y rápido", "D) Dejar que el rival tome la iniciativa"],
+         "correcta": 1, "explicacion": "Con desventaja económica, jugar lento te da tiempo y posición. El rival quiere un duelo abierto — deniégaselo."},
+        {"pregunta": "¿Qué significa 'information control' para el IGL?",
+         "opciones": ["A) No compartir info con el equipo", "B) Usar utilidades y posicionamiento para saber dónde está el rival sin exponerse", "C) Tener el mayor número de kills", "D) Controlar el chat del equipo"],
+         "correcta": 1, "explicacion": "Information control es ganar info del rival mientras minimizas la info que ellos obtienen de ti."},
+        {"pregunta": "Rival controla Prisión con 3 jugadores, tu equipo tiene 5. ¿Cómo atacas?",
+         "opciones": ["A) 5 por el mismo lado", "B) Split: 2 por norte, 3 por sur simultáneamente con humo de entrada", "C) Esperar a que salgan", "D) Ignorar Prisión"],
+         "correcta": 1, "explicacion": "Split 2-3 divide la atención de los 3 defensores. No pueden cubrir dos ángulos al mismo tiempo."},
+        {"pregunta": "¿Cuándo NO debes llamar un rush en TCT?",
+         "opciones": ["A) Cuando tienes info del rival mal posicionado", "B) Cuando no tienes info de posiciones rivales y el tiempo está a favor tuyo", "C) Cuando van ganando 4-2", "D) Cuando el fragger tiene un arma buena"],
+         "correcta": 1, "explicacion": "Rush sin info = regalo. Si el tiempo está a tu favor, esperar y obtener info es más valioso."},
+        {"pregunta": "¿Qué información debe comunicar el IGL al equipo ANTES de cada ronda?",
+         "opciones": ["A) Solo el arma que van a usar", "B) La ruta de push, el objetivo principal y la utilidad a usar", "C) Nada — que improvisen", "D) Solo el resultado de la ronda anterior"],
+         "correcta": 1, "explicacion": "Un buen callout pre-ronda reduce la carga cognitiva. Todos saben qué hacer antes de que empiece."},
+    ],
+    3: [
+        {"pregunta": "El rival siempre defiende con el mismo setup. ¿Cómo lo explotas?",
+         "opciones": ["A) Atacar siempre por el mismo lado", "B) Identificar el patrón, hacer un fake y atacar por el ángulo que no cubren", "C) Cambiar de armas", "D) Pedir al fragger algo diferente sin decirle qué"],
+         "correcta": 1, "explicacion": "Un rival predecible se explota con fake — amago por un lado para atacar por otro. Rompe su patrón defensivo."},
+        {"pregunta": "¿Qué es un 'eco round' y cuándo se usa?",
+         "opciones": ["A) Ronda donde todos compran lo mejor", "B) Ronda de ahorro con armas baratas para guardar recursos para la siguiente", "C) Ronda donde el IGL no da órdenes", "D) Ronda de práctica"],
+         "correcta": 1, "explicacion": "Eco sacrifica la ronda actual para tener recursos en la que importa. Si ya perdiste y no puedes comprar bien, ahorrar es lo correcto."},
+        {"pregunta": "¿Cuál es la diferencia entre un callout y una orden?",
+         "opciones": ["A) Son lo mismo", "B) Callout = informa posición del rival. Orden = dice al equipo qué hacer", "C) Las órdenes son del fragger", "D) Solo el IGL puede dar callouts"],
+         "correcta": 1, "explicacion": "Callout: 'hay uno en Trade Zone'. Orden: 'fragger flanquea por norte'. Ambos son esenciales pero distintos."},
+    ],
+},
 
-    "Ancla": {
+"Fragger": {
+    1: [
+        {"pregunta": "Eres el entry fragger. La puerta está cerrada. ¿Cuál es tu secuencia correcta?",
+         "opciones": ["A) Abrir y entrar corriendo", "B) Comunicar al IGL, esperar flash del soporte, entrar con crouching", "C) Esperar a que entre otro primero", "D) Tirar una granada antes de entrar"],
+         "correcta": 1, "explicacion": "El entry no entra solo. La secuencia: comunicar, recibir utilidad, entrar con técnica — no con impulso."},
+        {"pregunta": "Abriste una kill pero te quedaste con 30 de vida. ¿Qué haces?",
+         "opciones": ["A) Seguir pushando para aprovechar el momentum", "B) Retroceder a cover, comunicar tu estado y curar", "C) Pedir que el equipo se quede quieto", "D) Ignorar la vida y seguir"],
+         "correcta": 1, "explicacion": "30 de vida eres un objetivo fácil. Curar y comunicar tu estado permite al IGL tomar mejores decisiones."},
+        {"pregunta": "¿Cuál es la diferencia entre el entry fragger y el fragger de apoyo?",
+         "opciones": ["A) No hay diferencia", "B) Entry abre el terreno tomando duelos primero. Apoyo cubre y limpia lo que el entry deja", "C) Entry usa subfusil, apoyo usa rifle", "D) Apoyo es mejor jugador"],
+         "correcta": 1, "explicacion": "Entry arriesga primero para crear espacio. Fragger de apoyo entra después para limpiar ángulos residuales."},
+        {"pregunta": "Estás peeking un ángulo y el rival tiene mejor cobertura. ¿Qué técnica usas?",
+         "opciones": ["A) Peekear lento y directo", "B) Jiggle peek — salir y entrar rápido para obtener info sin intercambio completo", "C) Correr a través del ángulo", "D) Agacharse antes de peekear siempre"],
+         "correcta": 1, "explicacion": "Jiggle peek te da info sin darte tiempo a que te eliminen. Es la técnica fundamental para no peekear ciegamente."},
+        {"pregunta": "Tienes MP5 vs un rival con HK416 a distancia media. ¿Qué haces?",
+         "opciones": ["A) Pelear directo", "B) Acortar la distancia agresivamente o usar cover para minimizar la desventaja", "C) Retirarte completamente", "D) Disparar todo el cargador a la cabeza"],
+         "correcta": 1, "explicacion": "El MP5 pierde a media distancia contra rifles. Acorta distancia donde el MP5 domina o usa cover para duelos más cortos."},
+        {"pregunta": "Acabas de eliminar a dos rivales. El IGL dice 'no avances'. ¿Qué haces?",
+         "opciones": ["A) Ignorar al IGL y seguir — tienes momentum", "B) Obedecer — el IGL tiene info que tú no ves", "C) Avanzar solo un poco", "D) Preguntar por qué en pleno combate"],
+         "correcta": 1, "explicacion": "El IGL tiene visión macro del mapa. 'No avances' significa trampa, flanco o rotación que tú no ves desde tu posición."},
+        {"pregunta": "¿Qué técnica de movimiento reduce más tu hitbox en Blood Strike?",
+         "opciones": ["A) Correr en línea recta", "B) Crouch en duelos cercanos + strafing lateral en duelos medios", "C) Saltar constantemente", "D) Quedarte quieto para apuntar mejor"],
+         "correcta": 1, "explicacion": "Crouch reduce hitbox en duelos cerrados. Strafing lateral hace más difícil que te traqueen a media distancia."},
+    ],
+    2: [
+        {"pregunta": "Estás en una pelea 1v1, ambos con poca vida. ¿Qué decisión tomas?",
+         "opciones": ["A) Siempre atacar primero", "B) Evaluar: si tienes ventaja de cover pelear, si no crear distancia y curar", "C) Correr hacia el rival", "D) Llamar al equipo siempre"],
+         "correcta": 1, "explicacion": "1v1 con poca vida requiere evaluación no instinto. Cover y la posición deciden si la pelea es tuya."},
+        {"pregunta": "Tu equipo está haciendo un rush en TCT. ¿Cuál es tu posición como fragger?",
+         "opciones": ["A) Al frente siempre tomando todos los duelos", "B) Primero o segundo — abrir el paso y comunicar lo que ves inmediatamente", "C) Al final para cubrir flancos", "D) No importa la posición en un rush"],
+         "correcta": 1, "explicacion": "El fragger va al frente en el rush, pero su rol no es solo matar — también comunicar lo que ve para que el IGL adapte."},
+        {"pregunta": "El rival usa el mismo ángulo para matarte 3 veces. ¿Qué cambias?",
+         "opciones": ["A) Seguir peeking el mismo ángulo con más cuidado", "B) Cambiar completamente la ruta de entrada o pedir utilidad para romper ese ángulo", "C) Esperar a que el rival se mueva", "D) Cambiar de arma"],
+         "correcta": 1, "explicacion": "3 muertes por el mismo ángulo = el problema es la ruta, no la puntería. Cambiar entrada o usar utilidad rompe el patrón."},
+        {"pregunta": "¿Cuándo debes usar el Bizon vs el MP5 como fragger?",
+         "opciones": ["A) Son intercambiables", "B) Bizon para espacios cerrados y mayor capacidad de cargador. MP5 para mayor tasa de fuego y movilidad", "C) MP5 siempre es mejor", "D) Bizon solo defensa, MP5 solo ataque"],
+         "correcta": 1, "explicacion": "Bizon tiene 64 balas ideal para múltiples rivales en espacios cerrados. MP5 tiene mejor tasa de fuego para duelos individuales rápidos."},
+        {"pregunta": "Tu K/D esta ronda es 0-2 pero ganaron la ronda. ¿Cómo procesas esto?",
+         "opciones": ["A) Frustrarte porque fallaste tu rol", "B) Entender que el objetivo es ganar la ronda — evaluar qué hiciste que ayudó al equipo", "C) Cambiar tu estilo completamente", "D) Pedir disculpas al equipo inmediatamente"],
+         "correcta": 1, "explicacion": "Blood Strike es de equipo. Un fragger con 0 kills que crea espacio o distrae rivales puede ser el más valioso de la ronda."},
+    ],
+    3: [
+        {"pregunta": "Eres el único vivo, 1v3, zona media de TCT. ¿Cuál es tu plan?",
+         "opciones": ["A) Rush a los 3 rivales", "B) Usar el cover, forzar peleas 1v1 separadas con utilidades para dividir al grupo", "C) Retirarse y esperar el final", "D) Rendirse"],
+         "correcta": 1, "explicacion": "1v3 se gana dividiendo. Forzar peleas 1v1 usando cover y utilidades para separar al grupo. 1v3 abierto es pérdida segura."},
+        {"pregunta": "¿Cuál es el timing correcto para el peek agresivo en TCT?",
+         "opciones": ["A) Siempre al inicio de la ronda", "B) Cuando tienes info de que el rival está recargando, mirando otro lado o usando utilidad", "C) Solo al final con el tiempo encima", "D) Cuando el IGL no está mirando"],
+         "correcta": 1, "explicacion": "El peek agresivo gana cuando explotas un momento de vulnerabilidad. Sin ese contexto es un 50/50 que no deberías buscar."},
+    ],
+},
+
+"Ancla": {
+    1: [
+        {"pregunta": "¿Cuál es la función principal del Ancla en Blood Strike TCT?",
+         "opciones": ["A) Hacer la mayor cantidad de kills", "B) Mantener una posición clave dando info y frenando el avance rival", "C) Seguir al fragger siempre", "D) Usar todas las utilidades del equipo"],
+         "correcta": 1, "explicacion": "El ancla 'ancla' al equipo en el mapa. Mantiene posición que da info al IGL y frena el avance rival."},
+        {"pregunta": "Ves 2 rivales acercarse a tu zona. ¿Qué haces primero?",
+         "opciones": ["A) Salir a enfrentarlos inmediatamente", "B) Comunicar al IGL la posición de los rivales, luego mantener posición", "C) Retirarte sin decir nada", "D) Pedir al fragger que venga antes de comunicar"],
+         "correcta": 1, "explicacion": "La primera acción del ancla es SIEMPRE comunicar. El IGL necesita esa info para tomar decisiones macro."},
+        {"pregunta": "¿Cuándo debe abandonar su posición el ancla?",
+         "opciones": ["A) Nunca — el ancla siempre se queda", "B) Cuando el IGL lo ordena o cuando mantener la posición pone en riesgo al equipo completo", "C) Cuando tiene poca vida", "D) Cuando se aburre de la posición"],
+         "correcta": 1, "explicacion": "El ancla abandona su posición solo por orden del IGL o en situación táctica crítica. Hacerlo sin comunicación abre ruta vital al rival."},
+        {"pregunta": "¿Cuál arma es más adecuada para el ancla en TCT?",
+         "opciones": ["A) MP5 o Bizon", "B) M4A1, HK416 o AR97 — rifles de asalto para media y larga distancia", "C) M1887 escopeta", "D) Cualquier arma disponible"],
+         "correcta": 1, "explicacion": "El ancla defiende posiciones con duelos a media y larga distancia. Los rifles dan precisión y rango que los subfusiles no tienen."},
+        {"pregunta": "El rival usa flash para entrar a tu posición. ¿Cuál es la respuesta correcta?",
+         "opciones": ["A) Mirar directamente la flash", "B) Girar la vista, reposicionarte en cover y comunicar que usaron flash", "C) Salir de tu posición antes de que entren", "D) Disparar donde escuchas pasos"],
+         "correcta": 1, "explicacion": "Ante una flash: girar vista para no cegarte, cubrirte y comunicar. El rival entra justo después — necesitas estar reposicionado."},
+        {"pregunta": "Llevas 2 minutos anchando solo y no has visto rivales. ¿Qué info das al IGL?",
+         "opciones": ["A) Ninguna — si no hay rivales no hay info", "B) 'Mi zona está limpia' — le dice al IGL que los rivales están en otro sector", "C) Pedir permiso para moverse", "D) Esperar a que el IGL pregunte"],
+         "correcta": 1, "explicacion": "La info negativa también es info. 'Zona limpia' le dice al IGL que los rivales están concentrados en otro sector."},
+        {"pregunta": "¿Cuál es la diferencia entre un ancla pasiva y un ancla activa?",
+         "opciones": ["A) No hay diferencia", "B) Pasiva: mantiene posición fija. Activa: rota según la información del mapa", "C) Activa usa más armas", "D) Pasiva es para novatos"],
+         "correcta": 1, "explicacion": "Ancla pasiva defiende. Ancla activa rota agresivamente cuando la info del mapa lo justifica, actuando casi como un segundo IGL."},
+    ],
+    2: [
+        {"pregunta": "Estás anchando con 20 de vida. El rival no sabe que estás débil. ¿Qué haces?",
+         "opciones": ["A) Seguir agresivo — el bluff puede funcionar", "B) Comunicar tu estado al IGL, buscar cover profundo y curar", "C) Retirarte completamente", "D) Pedir que el fragger venga inmediatamente"],
+         "correcta": 1, "explicacion": "20 de vida es crítico. El IGL necesita saberlo para no contar contigo. Curar antes de volver a duelos es obligatorio."},
+        {"pregunta": "¿Qué utilidad es más útil para el ancla al defender una entrada?",
+         "opciones": ["A) Flash para cegar al que entra", "B) Molotov — zona de daño que ralentiza la entrada rival", "C) Granada para daño masivo", "D) Humo para ocultar la entrada"],
+         "correcta": 1, "explicacion": "Molotov crea zona de daño continua que ralentiza la entrada rival, dándote tiempo para reposicionarte o que el equipo rote."},
+        {"pregunta": "¿Cómo contribuye el ancla a ganar el juego sin hacer ninguna kill?",
+         "opciones": ["A) No contribuye si no hace kills", "B) Con info constante, control de zona y utilidades que permiten que el equipo juegue mejor", "C) Solo manteniéndose vivo", "D) Siendo el último en morir siempre"],
+         "correcta": 1, "explicacion": "El ancla que da info perfecta, controla su zona y usa utilidades en el momento correcto puede ser el más valioso aunque tenga 0 kills."},
+    ],
+    3: [
+        {"pregunta": "En BE, ¿cuál es el mejor posicionamiento del ancla en el círculo final?",
+         "opciones": ["A) Al frente del equipo buscando rivales", "B) Cubriendo el flanco más vulnerable del equipo y dando info de posiciones alrededor", "C) En el centro del círculo siempre", "D) Lo más lejos posible del equipo"],
+         "correcta": 1, "explicacion": "En el círculo final, el ancla protege el flanco. La mayoría de equipos pierden el último círculo por un flankeo que nadie cubrió."},
+        {"pregunta": "El rival está haciendo 'slow push' hacia tu zona. ¿Cómo respondes?",
+         "opciones": ["A) Salir a enfrentarlos agresivamente", "B) Mantener cover, dar info continua al IGL y usar utilidades para ralentizar su avance", "C) Retirarte inmediatamente", "D) Esperar a que lleguen a tu posición"],
+         "correcta": 1, "explicacion": "Slow push rival significa que vienen con cuidado. Ralentizarlos con info y utilidades da tiempo al equipo para reorganizarse."},
+    ],
+},
+
+"Soporte Media y Larga": {
+    1: [
+        {"pregunta": "¿Cuál es la primera prioridad del soporte durante un push del equipo?",
+         "opciones": ["A) Hacer kills", "B) Crear espacio seguro con utilidades — flash, humo y molotov para que el equipo avance sin morir", "C) Ir al frente del push", "D) Quedarse atrás y esperar"],
+         "correcta": 1, "explicacion": "El soporte no avanza primero — crea las condiciones para que el equipo avance. Flash, humo, molotov en el orden correcto."},
+        {"pregunta": "Tu fragger va a entrar a un punto caliente. ¿Qué utilidad usas y en qué orden?",
+         "opciones": ["A) Granada primero para daño", "B) Humo para cubrir el ángulo más peligroso, luego flash para cegar rivales dentro — el fragger entra después", "C) Molotov dentro y el fragger entra", "D) No usar utilidades para ahorrar"],
+         "correcta": 1, "explicacion": "Secuencia correcta: humo tapa ángulo exterior, flash ciega defensores interiores, fragger entra cuando la flash actúa. El orden importa."},
+        {"pregunta": "¿Cuándo usas el humo de forma ofensiva en Blood Strike?",
+         "opciones": ["A) Solo para esconderte", "B) Para tapar ángulos de cobertura del rival durante un push eliminando su ventaja", "C) Solo en defensa", "D) Nunca — el humo es solo defensivo"],
+         "correcta": 1, "explicacion": "El humo ofensivo elimina el ángulo del defensor durante tu push. Tapa SU visión, no la tuya — eso es uso ofensivo."},
+        {"pregunta": "El rival tiene un francotirador con Kar98k diezmando al equipo. ¿Cómo lo neutralizas?",
+         "opciones": ["A) Enviar al fragger directo a eliminarlo", "B) Tirar humo en su línea de visión y coordinar un flanqueo mientras no puede ver", "C) Ignorarlo y buscar otros rivales", "D) Usar flash en su dirección desde lejos"],
+         "correcta": 1, "explicacion": "Humo en la línea de visión del francotirador lo neutraliza instantáneamente. Mientras no ve, flanqueas para eliminarlo con seguridad."},
+        {"pregunta": "¿Cuántas utilidades deberías guardar para el momento crítico de la ronda?",
+         "opciones": ["A) Usarlas todas al inicio para crear presión", "B) Guardar al menos una utilidad de alto impacto para el push o defensa final", "C) Guardarlas todas hasta el final", "D) No importa cuándo usarlas"],
+         "correcta": 1, "explicacion": "Usar todas las utilidades al inicio te deja sin herramientas para el momento decisivo. Una flash o molotov correcta puede ganar la ronda."},
+        {"pregunta": "El equipo está curando después de una pelea. ¿Cuál es tu rol en ese momento?",
+         "opciones": ["A) Curar también sin preocuparte", "B) Cubrir el perímetro — buscar ángulos y dar info mientras el equipo cura, siendo el último en curar", "C) Presionar al rival aprovechando que también cura", "D) Descansar junto al equipo"],
+         "correcta": 1, "explicacion": "El soporte es el último en curar. Mientras el equipo recupera vida, tú cubres el perímetro para que no los sorprendan."},
+        {"pregunta": "¿Cuál es el rango ideal para el soporte de larga distancia?",
+         "opciones": ["A) Siempre distancia corta con subfusil", "B) Larga distancia con Kar98k, M82 o VSS eliminando rivales antes de que lleguen al equipo", "C) Media distancia con rifle siempre", "D) No importa el rango"],
+         "correcta": 1, "explicacion": "El soporte de larga elimina amenazas antes de que contacten con el equipo. Requiere posición elevada y buena mira."},
+    ],
+    2: [
+        {"pregunta": "¿Cuál es la diferencia entre soporte de media y soporte de larga distancia?",
+         "opciones": ["A) Solo el arma que usan", "B) Media: apoya pushes con utilidades y rifle a rangos medios. Larga: sniper desde posición elevada eliminando amenazas lejanas", "C) No hay diferencia táctica", "D) La larga distancia es mejor siempre"],
+         "correcta": 1, "explicacion": "Soporte media trabaja cerca del equipo. Soporte larga trabaja desde posiciones elevadas con sniper eliminando amenazas antes del contacto."},
+        {"pregunta": "¿Qué pasa si el soporte usa todas sus utilidades antes del push principal?",
+         "opciones": ["A) Nada — las utilidades son secundarias", "B) El equipo pierde su ventaja táctica en el momento más importante", "C) El fragger puede compensar", "D) El IGL puede reemplazar con callouts"],
+         "correcta": 1, "explicacion": "Las utilidades del soporte son recursos estratégicos. Usarlos antes del push decisivo deja al equipo sin herramientas cuando más las necesita."},
+        {"pregunta": "¿Cómo debe posicionarse el soporte de media durante la defensa en TCT?",
+         "opciones": ["A) Al frente de la entrada", "B) Detrás del ancla, cubriendo el segundo ángulo como segunda línea de defensa", "C) En el mismo lugar que el ancla", "D) En el spawn"],
+         "correcta": 1, "explicacion": "El soporte detrás del ancla crea defensa en capas. Si el ancla cae, el soporte ya está posicionado para el siguiente duelo."},
+    ],
+    3: [
+        {"pregunta": "¿Qué significa 'hard execute' y cuál es tu rol como soporte?",
+         "opciones": ["A) Que cada uno hace lo que quiera", "B) Ejecución perfecta predefinida — tu rol es lanzar utilidades en tiempos exactos acordados sin improvisación", "C) Que tú lideras el push", "D) Hard execute = rush sin utilidades"],
+         "correcta": 1, "explicacion": "Hard execute es táctica predefinida donde todos hacen exactamente lo acordado. Como soporte, tus utilidades van en el tiempo y lugar exactos — sin improvisar."},
+        {"pregunta": "¿En qué momento del juego el soporte debe volverse más agresivo en BE?",
+         "opciones": ["A) Siempre debe ser agresivo", "B) En el círculo final cuando quedan pocos equipos y la posición ya está definida", "C) Al inicio del juego", "D) Nunca — el soporte siempre es pasivo"],
+         "correcta": 1, "explicacion": "En el círculo final de BE con pocas posiciones disponibles, el soporte puede asumir más riesgo de manera calculada."},
+    ],
+},
+
+"Mapas": {
+    "Valle Abandonado": {
         1: [
-            {
-                "pregunta": "¿Cuál es la función principal del Ancla?",
-                "opciones": [
-                    "A) Rush constantemente",
-                    "B) Mantener posición defensiva clave y sostenerla bajo presión",
-                    "C) Dar info y moverse mucho",
-                    "D) Curar a todos",
-                ],
-                "correcta": 1,
-                "explicacion": "El Ancla es el eje defensivo — su job es no ceder terreno y ganar los duelos en su zona asignada.",
-            },
-            {
-                "pregunta": "¿Qué tipo de arma es más eficiente para el Ancla que defiende zona cerrada?",
-                "opciones": [
-                    "A) Sniper de largo alcance",
-                    "B) SMG para CQB + AR como respaldo",
-                    "C) Solo pistola",
-                    "D) Solo granada",
-                ],
-                "correcta": 1,
-                "explicacion": "El Ancla en zona cerrada necesita DPS alto en corta (SMG) y un AR de respaldo para si el enemigo se mantiene a media distancia.",
-            },
+            {"pregunta": "¿Cuál es la zona de control más importante en Valle Abandonado para el atacante?",
+             "opciones": ["A) Spawn propio", "B) Observation Deck — da visión de centro y permite dirigir el push a cualquier ruta", "C) Trade Zone siempre", "D) Rocket Base sin importar la situación"],
+             "correcta": 1, "explicacion": "Observation Deck es el corazón del mapa. Quien lo controla tiene info de todas las rutas y puede adaptarse en tiempo real."},
+            {"pregunta": "El rival defiende Bridge en Valle Abandonado. ¿Cuál es la mejor ruta alternativa?",
+             "opciones": ["A) Atacar Bridge de frente", "B) Flanquear por Satellite Base para salir detrás de Bridge", "C) Ignorar Bridge completamente", "D) Todo el equipo fuerza Bridge"],
+             "correcta": 1, "explicacion": "Bridge bien defendida de frente es muy difícil. El flanqueo por Satellite Base sale detrás de la defensa rompiendo su setup."},
+            {"pregunta": "¿Qué utilidad es más efectiva para tomar control de Trade Zone?",
+             "opciones": ["A) Granada para daño", "B) Humo en los ángulos de cobertura + flash para la entrada", "C) Molotov en el centro", "D) No se necesitan utilidades en Trade Zone"],
+             "correcta": 1, "explicacion": "Trade Zone tiene múltiples ángulos. Humo en los ángulos principales elimina las ventajas del defensor. La flash finaliza el control."},
         ],
         2: [
-            {
-                "pregunta": "Te están flanqueando desde dos lados simultáneamente. Eres el Ancla. ¿Qué haces?",
-                "opciones": [
-                    "A) Intentar matar a los dos a la vez",
-                    "B) Comunicar al equipo, retroceder a posición más segura y esperar apoyo",
-                    "C) Ignorar un flanco",
-                    "D) Salir corriendo",
-                ],
-                "correcta": 1,
-                "explicacion": "El Ancla inteligente no muere por orgullo. Ceder un metro para sobrevivir y avisar al equipo vale más que un kill doble imposible.",
-            },
-        ],
-        3: [
-            {
-                "pregunta": "¿Qué es el 'crouch spam' y cuándo lo usa el Ancla?",
-                "opciones": [
-                    "A) Agacharse repetidamente al disparar para hacer el hitbox más impredecible",
-                    "B) Solo agacharse para esconderse",
-                    "C) Correr agachado",
-                    "D) Saltar y agacharse",
-                ],
-                "correcta": 0,
-                "explicacion": "Crouch spam = bajar/subir rápido durante el duelo. El hitbox cambia y hace más difícil impactar al Ancla. Técnica defensiva avanzada.",
-            },
+            {"pregunta": "¿Cuál es la ventaja de controlar Satellite Base?",
+             "opciones": ["A) Ninguna — es zona sin importancia", "B) Da línea de fuego a Bridge y permite flanquear Observation Deck por el norte", "C) Solo tiene cobertura para un jugador", "D) Es la zona más fácil de defender"],
+             "correcta": 1, "explicacion": "Satellite Base da línea de fuego a Bridge y permite atacar Observation Deck desde un ángulo inesperado para los defensores del centro."},
+            {"pregunta": "Tu equipo necesita rotar rápido de Rocket Base a Observation Deck. ¿Qué ruta tomas?",
+             "opciones": ["A) Ruta por Bridge — más directa", "B) Ruta por Trade Zone — más cubierta y evita Bridge si está tomada", "C) Cruzar por campo abierto", "D) No es posible rotar en Valle Abandonado"],
+             "correcta": 1, "explicacion": "La rotación por Trade Zone tiene más cover que cruzar por campo abierto o Bridge si el rival ya la controla."},
         ],
     },
-
-    "Soporte Media y Larga": {
+    "Playa Cielo": {
         1: [
-            {
-                "pregunta": "¿Cuál es la prioridad del Soporte Media y Larga?",
-                "opciones": [
-                    "A) Estar siempre al frente",
-                    "B) Dar cobertura al equipo desde posiciones seguras y curar si es posible",
-                    "C) Solo disparar y nunca moverse",
-                    "D) Usar solo SMG",
-                ],
-                "correcta": 1,
-                "explicacion": "El Soporte cubre, protege y mantiene vivo al equipo. Su posición segura le da visión y líneas de fuego largas.",
-            },
-            {
-                "pregunta": "¿Qué es el 'centering' en shooting?",
-                "opciones": [
-                    "A) Estar en el centro del mapa",
-                    "B) Mantener el crosshair a altura de cabeza del enemigo en todo momento",
-                    "C) Disparar al centro del pecho",
-                    "D) Apuntar al piso",
-                ],
-                "correcta": 1,
-                "explicacion": "Centering = crosshair placement. Si tu mira siempre está a altura de cabeza, el ajuste para impactar es mínimo = más headshots naturales.",
-            },
+            {"pregunta": "¿Por qué Skyline City es considerada la zona más importante de Playa Cielo?",
+             "opciones": ["A) Tiene mejor loot", "B) Es el centro del mapa y da acceso a todas las rutas — quien la controla controla el flujo del juego", "C) Es la zona más fácil de defender", "D) Tiene el mejor cover del mapa"],
+             "correcta": 1, "explicacion": "Skyline City es el nexo de Playa Cielo. Desde ahí puedes rotarte a cualquier zona y negarle al rival sus rutas principales."},
+            {"pregunta": "El rival controla Lighthouse con un francotirador. ¿Cuál es la solución?",
+             "opciones": ["A) Atacar Lighthouse de frente con el equipo", "B) Humo en la línea de visión del Lighthouse + flanqueo por Cargo Port", "C) Ignorar el Lighthouse", "D) Esperar a que el francotirador se mueva"],
+             "correcta": 1, "explicacion": "Humo en la línea de visión neutraliza al francotirador temporalmente mientras flanqueas por Cargo Port donde no llega."},
+            {"pregunta": "¿Cuándo es conveniente usar Cargo Port como ruta en Playa Cielo?",
+             "opciones": ["A) Nunca — es ruta lenta", "B) Cuando el rival controla Skyline City — Cargo Port permite flanquear sin pasar por el centro", "C) Solo al inicio de la ronda", "D) Siempre que el equipo quiera"],
+             "correcta": 1, "explicacion": "Cargo Port es la ruta de flanqueo de Playa Cielo. Si el rival tiene el centro, Cargo Port te lleva a sus posiciones sin pasar por donde te esperan."},
         ],
         2: [
-            {
-                "pregunta": "¿Qué arma usa el Soporte Media en Blood Strike?",
-                "opciones": [
-                    "A) Solo SMG",
-                    "B) DMR como SKS o AR como M4A1/SCAR para media distancia",
-                    "C) Solo escopeta",
-                    "D) Solo pistola",
-                ],
-                "correcta": 1,
-                "explicacion": "Para media distancia el SKS (DMR) y el M4A1 (AR) son ideales. Alto daño sostenido y control para cubrir a los fraggers.",
-            },
-        ],
-        3: [
-            {
-                "pregunta": "¿Cómo ayuda el Soporte Larga a un push de site?",
-                "opciones": [
-                    "A) Entra primero al site",
-                    "B) Cubre desde posición elevada o lejana, suprimiendo a defenders para que el fragger entre seguro",
-                    "C) Espera que acabe todo",
-                    "D) Lanza granadas al azar",
-                ],
-                "correcta": 1,
-                "explicacion": "El Soporte Larga suprime = mantiene al defensor agachado o en cover, creando el espacio para que el Fragger entre con menor riesgo.",
-            },
+            {"pregunta": "En TCT en Playa Cielo, ¿cuál es la estrategia de defensa más efectiva?",
+             "opciones": ["A) Todos en Skyline City esperando", "B) Control de Lighthouse para info larga + ancla en Skyline City + soporte cubriendo Cargo Port", "C) Defensa de spawn sin moverse", "D) Rush al spawn rival desde inicio"],
+             "correcta": 1, "explicacion": "Esta configuración en tres zonas da info (Lighthouse), control de centro (Skyline City) y cubre el flanco (Cargo Port). Defensa más completa del mapa."},
         ],
     },
-
-    "Mapas": {
-        "Aldea": {
-            1: [
-                {
-                    "pregunta": "¿Cuál es la zona de control más importante en Aldea?",
-                    "opciones": [
-                        "A) La esquina noreste sin importancia",
-                        "B) El mercado central — quien lo controla dicta el flujo de la ronda",
-                        "C) Las afueras del mapa",
-                        "D) El punto de spawn",
-                    ],
-                    "correcta": 1,
-                    "explicacion": "El mercado central de Aldea es el hub táctico. Control aquí = info de todos los flancos y ventaja posicional total.",
-                },
-                {
-                    "pregunta": "Un rival campea en el edificio alto norte de Aldea. ¿Cómo lo sacas?",
-                    "opciones": [
-                        "A) Rush directo por la escalera",
-                        "B) Flanquear por callejón trasero + humo para tapar su línea de visión",
-                        "C) Ignorarlo y atacar otro lado",
-                        "D) Esperar a que baje",
-                    ],
-                    "correcta": 1,
-                    "explicacion": "El jugador en altura tiene ventaja de ángulo. Humo en su línea de visión + flanqueo por donde no puede ver = eliminación limpia.",
-                },
-            ],
-        },
-        "Desierto": {
-            1: [
-                {
-                    "pregunta": "¿Por qué la Roca Central en Desierto es tan valiosa?",
-                    "opciones": [
-                        "A) Es bonita visualmente",
-                        "B) Da cover elevado y visión de múltiples rutas del mapa",
-                        "C) No tiene ningún valor táctico",
-                        "D) Es el punto de respawn",
-                    ],
-                    "correcta": 1,
-                    "explicacion": "La Roca Central en Desierto es control de mapa — da height advantage y visión 270°. Quien la controla domina el ritmo.",
-                },
-            ],
-        },
-        "Puerto": {
-            1: [
-                {
-                    "pregunta": "¿Cuál es la mayor amenaza táctica en el mapa Puerto?",
-                    "opciones": [
-                        "A) El agua de fondo",
-                        "B) Los flancos entre contenedores — son múltiples y difíciles de controlar",
-                        "C) El muelle es demasiado corto",
-                        "D) No hay flancos en Puerto",
-                    ],
-                    "correcta": 1,
-                    "explicacion": "Puerto tiene múltiples ángulos de flanqueo entre contenedores. El equipo que no controla flancos pierde posición constantemente.",
-                },
-            ],
-        },
+    "Isla Siniestra": {
+        1: [
+            {"pregunta": "¿Por qué Prisión es tan importante en Isla Siniestra?",
+             "opciones": ["A) Tiene el mejor loot", "B) Está en el centro y da acceso a todas las zonas — quien la controla controla el mapa", "C) Es la zona más fácil de atacar", "D) Solo importa en fase final"],
+             "correcta": 1, "explicacion": "Prisión es el centro de Isla Siniestra. Controlarla da acceso a Puerto, Área Residencial y Planta de Agua — todas las zonas restantes."},
+            {"pregunta": "Necesitas tomar Prisión. El rival tiene 3 jugadores adentro. ¿Qué táctica usas?",
+             "opciones": ["A) 5 jugadores por la puerta principal", "B) Split: 2 por entrada norte, 3 por entrada sur con molotov coordinado dentro", "C) Esperar a que salgan", "D) Rodear Prisión sin entrar"],
+             "correcta": 1, "explicacion": "Prisión con 3 defensores en puerta principal es trampa. Split norte-sur con molotov coordinado fuerza a los 3 a moverse de sus posiciones."},
+            {"pregunta": "¿Cuál zona es más útil para el soporte de larga distancia en Isla Siniestra?",
+             "opciones": ["A) Puerto — ruta rápida", "B) Área Residencial — edificios con altura dan ángulos de larga distancia hacia Prisión y Puerto", "C) Planta de Tratamiento — zona abierta", "D) Dentro de Prisión siempre"],
+             "correcta": 1, "explicacion": "Área Residencial tiene los edificios más altos del mapa. Desde ahí el soporte tiene líneas de visión hacia Prisión y Puerto sin exponerse."},
+        ],
+        2: [
+            {"pregunta": "El rival te flanquea por Puerto mientras atacas Prisión. ¿Cómo lo anticipas?",
+             "opciones": ["A) No se puede anticipar", "B) Designar un jugador para cubrir Puerto durante el push — ancla o soporte de media cubriendo el flanco", "C) Ignorar Puerto y terminar rápido en Prisión", "D) Esperar el flanqueo y reaccionar"],
+             "correcta": 1, "explicacion": "El flanqueo por Puerto es el más común en Isla Siniestra durante pushes a Prisión. Designar un cubridor de flanco previene la sorpresa."},
+        ],
     },
-}
+},
 
-NIVELES_RANKING = {
-    0:    "🥉 Bronce",
-    200:  "🥈 Plata",
-    500:  "🥇 Oro",
-    900:  "💎 Diamante",
-    1400: "⭐ Elite",
 }
-
-PUNTOS_POR_RESPUESTA = 25
-BONUS_RACHA = {3: 10, 5: 25, 7: 50}  # Racha de respuestas correctas → bonus

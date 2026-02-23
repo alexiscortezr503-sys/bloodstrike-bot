@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-BloodStrike Elite Bot — Coach: Alexis Cortez
-Deploy: Railway | Sistema: Arch Linux
+BloodStrike Elite Bot v4 — Coach: Alexis Cortez
+Novedades v4: donaciones, preguntas profesionales de combate real, ranking expandido
 """
 
 import logging, os
@@ -26,13 +26,27 @@ from modules.sensi import sensi_menu, sensi_handler
 from modules.meta import meta_menu, meta_handler
 from modules.entrenamiento import entren_menu, entren_handler
 from modules.ranking import ranking_handler
-from modules.coach import coach_menu, coach_handler
+from modules.coach import (
+    coach_menu, coach_handler, coach_password_handler,
+    ESPERANDO_PASSWORD
+)
+from modules.scrims import (
+    scrims_menu, scrim_tipo_handler, scrim_mapa_handler,
+    scrim_kills_handler, scrim_daño_handler, scrim_posicion_handler,
+    scrim_notas_handler, mis_partidas_handler,
+    ESPERANDO_SCRIM_KILLS, ESPERANDO_SCRIM_DAÑO,
+    ESPERANDO_SCRIM_POSICION, ESPERANDO_SCRIM_MAPA,
+    ESPERANDO_SCRIM_NOTAS
+)
+from modules.donaciones import (
+    donaciones_menu, donar_estrellas_handler, donar_ton_handler
+)
 
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-TOKEN = os.getenv("BOT_TOKEN", "8698428588:AAHfxnFq2maUP_OfW9Pa4KB_v-o9_69yP_0")
-COACH_ID = int(os.getenv("COACH_ID", "8495287319"))
+TOKEN = os.getenv("BOT_TOKEN", "")
+COACH_ID = int(os.getenv("COACH_ID", "0"))
 
 
 def main():
@@ -42,7 +56,7 @@ def main():
     app.add_handler(CommandHandler("start", menu_principal))
     app.add_handler(CommandHandler("menu", menu_principal))
 
-    # ── ConversationHandler: ¿Cómo te sientes? ───────────────
+    # ── ConversationHandler: Psicología ─────────────────────
     conv_psico = ConversationHandler(
         entry_points=[CallbackQueryHandler(como_te_sientes_start, pattern="^psico_sentir$")],
         states={ESPERANDO_SENTIMIENTO: [MessageHandler(filters.TEXT & ~filters.COMMAND, como_te_sientes_respuesta)]},
@@ -63,10 +77,41 @@ def main():
     )
     app.add_handler(conv_exam)
 
+    # ── ConversationHandler: Panel Coach ────────────────────
+    conv_coach = ConversationHandler(
+        entry_points=[CallbackQueryHandler(coach_menu, pattern="^coach_menu$")],
+        states={ESPERANDO_PASSWORD: [MessageHandler(filters.TEXT & ~filters.COMMAND, coach_password_handler)]},
+        fallbacks=[CommandHandler("menu", menu_principal)],
+        allow_reentry=True
+    )
+    app.add_handler(conv_coach)
+
+    # ── ConversationHandler: Scrims ──────────────────────────
+    conv_scrims = ConversationHandler(
+        entry_points=[
+            CallbackQueryHandler(scrims_menu, pattern="^scrims$"),
+            CallbackQueryHandler(scrim_tipo_handler, pattern="^scrim_tipo_"),
+        ],
+        states={
+            ESPERANDO_SCRIM_MAPA:     [CallbackQueryHandler(scrim_mapa_handler, pattern="^scrim_mapa_")],
+            ESPERANDO_SCRIM_KILLS:    [MessageHandler(filters.TEXT & ~filters.COMMAND, scrim_kills_handler)],
+            ESPERANDO_SCRIM_DAÑO:     [MessageHandler(filters.TEXT & ~filters.COMMAND, scrim_daño_handler)],
+            ESPERANDO_SCRIM_POSICION: [MessageHandler(filters.TEXT & ~filters.COMMAND, scrim_posicion_handler)],
+            ESPERANDO_SCRIM_NOTAS:    [MessageHandler(filters.TEXT & ~filters.COMMAND, scrim_notas_handler)],
+        },
+        fallbacks=[CommandHandler("menu", menu_principal)],
+        allow_reentry=True
+    )
+    app.add_handler(conv_scrims)
+
+    # ── Donaciones ───────────────────────────────────────────
+    app.add_handler(CallbackQueryHandler(donaciones_menu,         pattern="^donaciones$"))
+    app.add_handler(CallbackQueryHandler(donar_estrellas_handler, pattern="^donar_estrellas$"))
+    app.add_handler(CallbackQueryHandler(donar_ton_handler,       pattern="^donar_ton$"))
+
     # ── Callbacks inline ─────────────────────────────────────
-    app.add_handler(CallbackQueryHandler(psico_handler,          pattern="^psico_dep$"))
-    app.add_handler(CallbackQueryHandler(psico_deportiva_handler, pattern="^psico_(dep_|psi_)"))
-    app.add_handler(CallbackQueryHandler(psico_deportiva_handler, pattern="^psico_noop$"))
+    app.add_handler(CallbackQueryHandler(psico_handler,           pattern="^psico_dep$"))
+    app.add_handler(CallbackQueryHandler(psico_deportiva_handler, pattern="^psico_(dep_|psi_|noop)"))
 
     app.add_handler(CallbackQueryHandler(jugadores_menu,  pattern="^jugadores$"))
     app.add_handler(CallbackQueryHandler(jugador_handler, pattern="^jug_"))
@@ -80,16 +125,15 @@ def main():
     app.add_handler(CallbackQueryHandler(entren_menu,    pattern="^entren$"))
     app.add_handler(CallbackQueryHandler(entren_handler, pattern="^entren_"))
 
-    app.add_handler(CallbackQueryHandler(ranking_handler, pattern="^rank$"))
+    app.add_handler(CallbackQueryHandler(ranking_handler,       pattern="^rank$"))
+    app.add_handler(CallbackQueryHandler(coach_handler,         pattern="^coach_"))
+    app.add_handler(CallbackQueryHandler(mis_partidas_handler,  pattern="^scrim_mis_partidas$"))
 
-    app.add_handler(CallbackQueryHandler(coach_menu,    pattern="^coach_menu$"))
-    app.add_handler(CallbackQueryHandler(coach_handler, pattern="^coach_"))
-
-    # ── Volver al menú (catch-all final) ─────────────────────
+    # ── Volver al menú ───────────────────────────────────────
     app.add_handler(CallbackQueryHandler(handle_menu_callback, pattern="^volver_menu$"))
     app.add_handler(CallbackQueryHandler(handle_menu_callback))
 
-    logger.info("🎮 BloodStrike Elite Bot iniciado — 24/7")
+    logger.info("🎮 BloodStrike Elite Bot v4 iniciado")
     app.run_polling(allowed_updates=Update.ALL_TYPES)
 
 

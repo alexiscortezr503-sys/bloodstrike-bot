@@ -1,7 +1,6 @@
 """
-modules/menu.py — Menú principal limpio y simplificado
+modules/menu.py — Menú principal con donaciones
 """
-
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
@@ -10,7 +9,6 @@ BIENVENIDA = (
     "━━━━━━━━━━━━━━━━━━━━━━\n"
     "🎮 Sistema de entrenamiento profesional\n"
     "👤 Coach: *Alexis Cortez*\n"
-    "📱 Plataforma: Móvil\n"
     "━━━━━━━━━━━━━━━━━━━━━━\n\n"
     "Selecciona una opción:"
 )
@@ -20,15 +18,19 @@ def build_main_keyboard():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("😊 ¿Cómo te sientes?", callback_data="psico_sentir"),
          InlineKeyboardButton("🧠 Psicología Deportiva", callback_data="psico_dep")],
-        [InlineKeyboardButton("🏋️ Plan de Entrenamiento", callback_data="entren"),
-         InlineKeyboardButton("📚 Exámenes y Ranking", callback_data="examenes")],
+        [InlineKeyboardButton("🏋️ Entrenamiento", callback_data="entren"),
+         InlineKeyboardButton("📚 Exámenes", callback_data="examenes")],
         [InlineKeyboardButton("🔫 META Armas", callback_data="meta"),
-         InlineKeyboardButton("📐 Mi Sensibilidad", callback_data="sensi")],
+         InlineKeyboardButton("📐 Sensibilidad", callback_data="sensi")],
+        [InlineKeyboardButton("🗺️ Mapas y Tácticas", callback_data="meta_mapas"),
+         InlineKeyboardButton("🦾 Strikers", callback_data="meta_strikers")],
+        [InlineKeyboardButton("⚡ Combinaciones", callback_data="meta_combos"),
+         InlineKeyboardButton("💣 Utilidades", callback_data="meta_utilidades")],
         [InlineKeyboardButton("👥 Jugadores", callback_data="jugadores"),
          InlineKeyboardButton("🏆 Ranking", callback_data="rank")],
-        [InlineKeyboardButton("🗺️ Tácticas por Mapa", callback_data="meta_mapas"),
-         InlineKeyboardButton("🎯 Combinaciones", callback_data="meta_combos")],
-        [InlineKeyboardButton("📋 Panel Coach", callback_data="coach_menu")],
+        [InlineKeyboardButton("⚔️ Registrar Scrim", callback_data="scrims")],
+        [InlineKeyboardButton("💝 Apoyar el Bot", callback_data="donaciones")],
+        [InlineKeyboardButton("📋 Panel Coach 🔐", callback_data="coach_menu")],
     ])
 
 

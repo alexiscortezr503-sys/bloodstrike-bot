@@ -1,10 +1,10 @@
 """
-modules/meta.py — Meta armas, mapas reales y combinaciones
+modules/meta.py — Meta armas reales, mapas reales, utilidades reales y Strikers
 """
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
-from data.meta import META_ARMAS, META_HABILIDADES, COMBINACIONES_META, MAPAS_BLOODSTRIKE
+from data.meta import META_ARMAS, META_UTILIDADES, COMBINACIONES_META, COMBINACIONES_STRIKERS, MAPAS_BLOODSTRIKE, STRIKERS_BLOODSTRIKE
 
 
 async def meta_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -12,21 +12,21 @@ async def meta_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     texto = (
-        "🔫 *META DE BLOOD STRIKE*\n"
+        "🔫 *META BLOOD STRIKE*\n"
         "━━━━━━━━━━━━━━━━━━━━━━\n"
         "Parche actualizado: *10/02/2026*\n\n"
-        "Selecciona una categoría:"
+        "Selecciona:"
     )
-
     keyboard = [
-        [InlineKeyboardButton("🔫 SMG", callback_data="meta_arma_SMG"), InlineKeyboardButton("⚔️ AR (Rifle)", callback_data="meta_arma_AR")],
+        [InlineKeyboardButton("🔫 SMG", callback_data="meta_arma_SMG"), InlineKeyboardButton("⚔️ AR", callback_data="meta_arma_AR")],
         [InlineKeyboardButton("🎯 Francotirador", callback_data="meta_arma_Francotirador"), InlineKeyboardButton("📡 DMR", callback_data="meta_arma_DMR")],
         [InlineKeyboardButton("💥 Escopeta", callback_data="meta_arma_Escopeta")],
-        [InlineKeyboardButton("💣 Habilidades Ofensivas", callback_data="meta_hab_ofensivas")],
-        [InlineKeyboardButton("🛡️ Defensivas", callback_data="meta_hab_defensivas"), InlineKeyboardButton("❤️ Soporte", callback_data="meta_hab_soporte")],
+        [InlineKeyboardButton("💣 Utilidades Reales", callback_data="meta_utilidades")],
+        [InlineKeyboardButton("🗺️ Tácticas por Mapa", callback_data="meta_mapas")],
+        [InlineKeyboardButton("⚡ Combinaciones Tácticas", callback_data="meta_combos")],
+        [InlineKeyboardButton("🦾 Strikers — Combinaciones", callback_data="meta_strikers")],
         [InlineKeyboardButton("⬅️ Menú Principal", callback_data="volver_menu")],
     ]
-
     await query.edit_message_text(texto, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
 
 
@@ -37,35 +37,29 @@ async def meta_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if data == "meta":
         await meta_menu(update, context)
-        return
-
-    if data == "meta_mapas":
+    elif data == "meta_mapas":
         await mostrar_menu_mapas(query)
-        return
-
-    if data == "meta_combos":
+    elif data == "meta_combos":
         await mostrar_menu_combos(query)
-        return
-
-    if data.startswith("meta_mapa_"):
+    elif data == "meta_utilidades":
+        await mostrar_utilidades(query)
+    elif data == "meta_strikers":
+        await mostrar_menu_strikers(query)
+    elif data.startswith("meta_mapa_"):
         mapa = data.replace("meta_mapa_", "")
         await mostrar_detalle_mapa(query, mapa)
-        return
-
-    if data.startswith("meta_combo_"):
+    elif data.startswith("meta_combo_"):
         idx = int(data.replace("meta_combo_", ""))
         await mostrar_detalle_combo(query, idx)
-        return
-
-    if data.startswith("meta_arma_"):
+    elif data.startswith("meta_striker_combo_"):
+        idx = int(data.replace("meta_striker_combo_", ""))
+        await mostrar_detalle_striker_combo(query, idx)
+    elif data.startswith("meta_striker_info_"):
+        nombre = data.replace("meta_striker_info_", "")
+        await mostrar_info_striker(query, nombre)
+    elif data.startswith("meta_arma_"):
         cat = data.replace("meta_arma_", "")
         await mostrar_armas(query, cat)
-        return
-
-    if data.startswith("meta_hab_"):
-        tipo = data.replace("meta_hab_", "")
-        await mostrar_habilidades(query, tipo)
-        return
 
 
 async def mostrar_armas(query, categoria):
@@ -74,9 +68,9 @@ async def mostrar_armas(query, categoria):
         return
 
     armas = META_ARMAS[categoria]
-    tier_emoji = {"S": "🔴", "A": "🟠", "B": "🟡", "C": "⚪"}
+    tier_emoji = {"S": "🔴", "A": "🟠", "B": "🟡"}
 
-    texto = f"🔫 *{categoria} — META PARCHE 10/02/2026*\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
+    texto = f"🔫 *{categoria} — PARCHE 10/02/2026*\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
     for a in armas:
         e = tier_emoji.get(a["tier"], "⚪")
         acc = " / ".join(a["accesorios_meta"])
@@ -91,42 +85,36 @@ async def mostrar_armas(query, categoria):
 
     keyboard = [
         [InlineKeyboardButton("⬅️ Otras armas", callback_data="meta")],
-        [InlineKeyboardButton("🎯 Ver Combinaciones", callback_data="meta_combos")],
+        [InlineKeyboardButton("⚡ Ver Combinaciones", callback_data="meta_combos")],
         [InlineKeyboardButton("🏠 Menú Principal", callback_data="volver_menu")],
     ]
     await query.edit_message_text(texto, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
 
 
-async def mostrar_habilidades(query, tipo):
-    if tipo not in META_HABILIDADES:
-        await query.answer("No disponible", show_alert=True)
-        return
-
-    titulos = {"ofensivas": "💥 OFENSIVAS", "defensivas": "🛡️ DEFENSIVAS", "soporte": "❤️ SOPORTE"}
-    habs = META_HABILIDADES[tipo]
-
-    texto = f"*{titulos.get(tipo, tipo)}*\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
-    for h in habs:
-        texto += f"🔸 *{h['nombre']}*\n  → {h['uso']}\n\n"
+async def mostrar_utilidades(query):
+    texto = "💣 *UTILIDADES REALES DE BLOOD STRIKE*\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
+    for nombre, info in META_UTILIDADES.items():
+        texto += (
+            f"🔸 *{nombre}*\n"
+            f"  {info['descripcion']}\n"
+            f"  📌 Uso: {info['uso']}\n"
+            f"  💡 Tip: _{info['tip']}_\n\n"
+        )
 
     keyboard = [
-        [InlineKeyboardButton("🎯 Ver Combinaciones Meta", callback_data="meta_combos")],
-        [InlineKeyboardButton("⬅️ Volver a Meta", callback_data="meta")],
+        [InlineKeyboardButton("⚡ Combinaciones con Utilidades", callback_data="meta_combos")],
+        [InlineKeyboardButton("⬅️ Menú Meta", callback_data="meta")],
     ]
     await query.edit_message_text(texto, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
 
 
 async def mostrar_menu_mapas(query):
-    texto = (
-        "🗺️ *TÁCTICAS POR MAPA*\n"
-        "━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        "Selecciona el mapa:"
-    )
+    texto = "🗺️ *TÁCTICAS POR MAPA*\n━━━━━━━━━━━━━━━━━━━━━━\n\nSelecciona el mapa:"
     keyboard = [
-        [InlineKeyboardButton("🏚️ Valle Abandonado", callback_data="meta_mapa_Valle Abandonado")],
-        [InlineKeyboardButton("🏖️ Playa Cielo", callback_data="meta_mapa_Playa Cielo")],
-        [InlineKeyboardButton("🏝️ Isla Siniestra", callback_data="meta_mapa_Isla Siniestra")],
-        [InlineKeyboardButton("⬅️ Menú Principal", callback_data="volver_menu")],
+        [InlineKeyboardButton("🏚️ Valle Abandonado (The Valley)", callback_data="meta_mapa_Valle Abandonado")],
+        [InlineKeyboardButton("🏖️ Playa Cielo (Skyline Beach)", callback_data="meta_mapa_Playa Cielo")],
+        [InlineKeyboardButton("🏝️ Isla Siniestra (Shutter Island)", callback_data="meta_mapa_Isla Siniestra")],
+        [InlineKeyboardButton("⬅️ Menú Meta", callback_data="meta")],
     ]
     await query.edit_message_text(texto, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
 
@@ -141,8 +129,9 @@ async def mostrar_detalle_mapa(query, mapa):
 
     texto = (
         f"🗺️ *{mapa.upper()}*\n"
+        f"_(Nombre en juego: {m['nombre_ingles']})_\n"
         f"━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"📋 Tipo: {m['tipo']}\n"
+        f"📋 {m['tipo']}\n"
         f"_{m['descripcion']}_\n\n"
         f"🔑 *Zonas clave:*\n{zonas_txt}\n\n"
         f"⚔️ *Ataque:*\n{m['estrategia_ataque']}\n\n"
@@ -161,31 +150,25 @@ async def mostrar_detalle_mapa(query, mapa):
 
 
 async def mostrar_menu_combos(query):
-    texto = (
-        "🎯 *COMBINACIONES DE HABILIDADES META*\n"
-        "━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        "Estrategias completas para BE y TCT.\n"
-        "Selecciona una:"
-    )
-
+    texto = "⚡ *COMBINACIONES TÁCTICAS*\n━━━━━━━━━━━━━━━━━━━━━━\n\nArmas + Utilidades para BE y TCT:"
     keyboard = []
     for i, nombre in enumerate(COMBINACIONES_META.keys()):
         keyboard.append([InlineKeyboardButton(f"⚡ {nombre}", callback_data=f"meta_combo_{i}")])
-
-    keyboard.append([InlineKeyboardButton("⬅️ Menú Principal", callback_data="volver_menu")])
+    keyboard.append([InlineKeyboardButton("🦾 Combos de Strikers", callback_data="meta_strikers")])
+    keyboard.append([InlineKeyboardButton("⬅️ Menú Meta", callback_data="meta")])
     await query.edit_message_text(texto, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
 
 
 async def mostrar_detalle_combo(query, idx):
     nombres = list(COMBINACIONES_META.keys())
     if idx >= len(nombres):
-        await query.answer("Combo no encontrado", show_alert=True)
+        await query.answer("No encontrado", show_alert=True)
         return
 
     nombre = nombres[idx]
     c = COMBINACIONES_META[nombre]
     armas_txt = "\n".join([f"  • {a}" for a in c["armas"]])
-    habs_txt = "\n".join([f"  • {h}" for h in c["habilidades"]])
+    utils_txt = "\n".join([f"  • {u}" for u in c["utilidades"]])
 
     texto = (
         f"⚡ *{nombre}*\n"
@@ -193,13 +176,82 @@ async def mostrar_detalle_combo(query, idx):
         f"🎮 Modo: *{c['modo']}*\n"
         f"📋 _{c['descripcion']}_\n\n"
         f"🔫 *Armas:*\n{armas_txt}\n\n"
-        f"💣 *Habilidades:*\n{habs_txt}\n\n"
+        f"💣 *Utilidades:*\n{utils_txt}\n\n"
         f"📖 *Estrategia:*\n{c['estrategia']}\n\n"
         f"🗺️ *Mejor en:* _{c['mejor_en']}_"
     )
 
     keyboard = [
         [InlineKeyboardButton("⬅️ Otras combinaciones", callback_data="meta_combos")],
+        [InlineKeyboardButton("🦾 Combos de Strikers", callback_data="meta_strikers")],
         [InlineKeyboardButton("🏠 Menú Principal", callback_data="volver_menu")],
+    ]
+    await query.edit_message_text(texto, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
+
+
+async def mostrar_menu_strikers(query):
+    texto = (
+        "🦾 *STRIKERS — COMBINACIONES POR ESTILO*\n"
+        "━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "Combinaciones de Strikers para cada estilo de juego:"
+    )
+    keyboard = []
+    for i, nombre in enumerate(COMBINACIONES_STRIKERS.keys()):
+        keyboard.append([InlineKeyboardButton(nombre, callback_data=f"meta_striker_combo_{i}")])
+    keyboard.append([InlineKeyboardButton("📋 Info por Striker", callback_data="meta_striker_lista")])
+    keyboard.append([InlineKeyboardButton("⬅️ Menú Meta", callback_data="meta")])
+    await query.edit_message_text(texto, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
+
+
+async def mostrar_detalle_striker_combo(query, idx):
+    nombres = list(COMBINACIONES_STRIKERS.keys())
+    if idx >= len(nombres):
+        await query.answer("No encontrado", show_alert=True)
+        return
+
+    nombre = nombres[idx]
+    c = COMBINACIONES_STRIKERS[nombre]
+    strikers_txt = "\n".join([f"  • {s}" for s in c["strikers"]])
+    armas_txt = "\n".join([f"  • {a}" for a in c["armas"]])
+    utils_txt = "\n".join([f"  • {u}" for u in c["utilidades"]])
+
+    texto = (
+        f"🦾 *{nombre}*\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"📋 _{c['descripcion']}_\n\n"
+        f"👥 *Strikers recomendados:*\n{strikers_txt}\n\n"
+        f"🔫 *Armas:*\n{armas_txt}\n\n"
+        f"💣 *Utilidades:*\n{utils_txt}\n\n"
+        f"📖 *Estrategia:*\n{c['estrategia']}\n\n"
+        f"🗺️ *Mejor en:* _{c['mejor_en']}_\n"
+        f"⚠️ *Debilidad:* _{c['debilidad']}_"
+    )
+
+    keyboard = [
+        [InlineKeyboardButton("⬅️ Otros estilos", callback_data="meta_strikers")],
+        [InlineKeyboardButton("🏠 Menú Principal", callback_data="volver_menu")],
+    ]
+    await query.edit_message_text(texto, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
+
+
+async def mostrar_info_striker(query, nombre):
+    if nombre not in STRIKERS_BLOODSTRIKE:
+        await query.answer("Striker no encontrado", show_alert=True)
+        return
+
+    s = STRIKERS_BLOODSTRIKE[nombre]
+    texto = (
+        f"🦾 *STRIKER: {nombre}*\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"⚡ *Habilidad activa:*\n_{s['habilidad_activa']}_\n\n"
+        f"🔹 *Habilidad pasiva:*\n_{s['habilidad_pasiva']}_\n\n"
+        f"🎮 *Estilo:* {s['estilo']}\n"
+        f"🏆 *Mejor en:* {s['mejor_en']}\n"
+        f"🔫 *Sinergias:* {s['sinergias']}"
+    )
+
+    keyboard = [
+        [InlineKeyboardButton("⬅️ Lista de Strikers", callback_data="meta_striker_lista")],
+        [InlineKeyboardButton("⬅️ Combinaciones", callback_data="meta_strikers")],
     ]
     await query.edit_message_text(texto, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))

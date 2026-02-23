@@ -1,47 +1,122 @@
 """
-modules/coach.py — Panel exclusivo para el coach (Alexis)
+modules/coach.py — Panel del Coach con contraseña y sistema de scrims
+Contraseña: 2006
 """
 
-import json
-import os
+import json, os
+from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ContextTypes
+from telegram.ext import ContextTypes, ConversationHandler, MessageHandler, filters, CommandHandler
+from modules.ranking import cargar_ranking
 
-RANKING_FILE = "data/ranking.json"
-COACH_ID = int(os.getenv("COACH_ID", "0"))
+COACH_PASSWORD = "2006"
+COACH_FILE = "data/scrims.json"
+ESPERANDO_PASSWORD = 20
+ESPERANDO_SCRIM_DATA = 21
+ESPERANDO_SCRIM_TIPO = 22
+
+COACH_TIPS = [
+    "🎯 Anderson (IGL): Su toma de decisiones mejora cuando tiene 3 segundos para pensar antes de ordenar. Practicar briefings pre-ronda cortos y claros.",
+    "🔥 Jose (Fragger): Necesita recordar que el Flash va ANTES de entrar, no después. Revisar timing de entry en cada scrim.",
+    "🛡️ Xavier (Ancla): Tendencia a moverse de su zona sin avisar al IGL. Reforzar la regla: comunicar ANTES de rotar.",
+    "📡 Alejandro (Soporte): Potencial alto con AR97 post-buff. Trabajar el centering a larga distancia con mira 4x — debe ser automático.",
+    "⚡ Antonio (Fragger Entry): Agresividad alta — canalizar esa energía con timing. Primero Flash, luego entrada. No al revés.",
+    "🎮 Anderson 2: En fase de definición de rol. Darle variedad de situaciones para descubrir dónde brilla naturalmente.",
+    "🌱 Maximiliano: El jugador con mayor margen de mejora. Priorizar fundamentos sobre tácticas avanzadas — la base importa más.",
+    "🧠 Equipo: El sistema Wildcard nuevo (parche 10/02/2026) abre nuevas combinaciones. Experimentar en scrims de entrenamiento antes de torneos.",
+    "📊 Economía TCT: La reforma económica del parche 10/02/2026 cambió los precios. Revisar qué comprar en cada ronda según el dinero disponible.",
+    "🗺️ Valle Abandonado: El equipo suele perder Observation Deck en el minuto 1. Establecer protocolo de toma de Observation Deck como prioridad máxima al inicio.",
+    "🏝️ Isla Siniestra: El rush a Prisión debe ser sincronizado — si llegan en distintos tiempos, el primero muere solo. Practicar timing de llegada.",
+    "🏖️ Playa Cielo: Skyline City es la trampa más común — el equipo la pelea de frente. Practicar el split: uno entra por Yacht Club mientras el otro entra por Cultural Center.",
+    "💣 Utilidades: El equipo subestima la Granada Adhesiva. Es más precisa que la normal y funciona como trampa en corners — educar sobre su uso.",
+    "🔫 HK416 nuevo: Evaluar si Anderson o Jose se benefician del HK416 con BAS Tipo C. La eliminación del retraso sprint/disparo puede cambiar el estilo de rush.",
+    "📱 Sensi: Verificar que todos usan la sensibilidad avanzada (X)(Y) correcta para su celular. Una sensi inconsistente destruye el aim entrenado.",
+    "🧘 Psicología: Si el equipo pierde 3 rondas seguidas, hacer pausa de 30 segundos antes de la siguiente. El tilt en cadena es el error más común en torneos.",
+    "🎖️ Sistema Wildcard: Los Wildcards de rareza alta pueden cambiar el resultado de rondas. Investigar cuáles son más útiles para cada rol del equipo.",
+    "⭐ Strikers: Revisar que cada jugador usa el Striker correcto para su rol. RAN/KRAKEN para fraggers, NOVA/ETHAN para IGL/soporte, VOLT/EMMA para ancla.",
+]
 
 
-def es_coach(user_id: int) -> bool:
-    return COACH_ID == 0 or user_id == COACH_ID
+def cargar_scrims():
+    if os.path.exists(COACH_FILE):
+        with open(COACH_FILE, "r") as f:
+            return json.load(f)
+    return {"entrenamiento": [], "liga": []}
+
+
+def guardar_scrims(data):
+    os.makedirs("data", exist_ok=True)
+    with open(COACH_FILE, "w") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
 
 async def coach_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.message:
-        user_id = update.message.from_user.id
-        send = update.message.reply_text
-    else:
-        query = update.callback_query
-        await query.answer()
-        user_id = query.from_user.id
-        send = query.edit_message_text
+    query = update.callback_query
+    await query.answer()
 
+    # Si ya autenticado en esta sesión
+    if context.user_data.get("coach_auth"):
+        await mostrar_panel_coach(query, context)
+        return
+
+    # Pedir contraseña
     texto = (
-        "📋 *PANEL DEL COACH*\n"
-        "━━━━━━━━━━━━━━━━━━━━━━\n"
-        "👤 Coach: *Alexis Cortez*\n\n"
-        "Herramientas exclusivas de gestión:"
+        "🔐 *PANEL DEL COACH*\n"
+        "━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "Este panel es exclusivo del Coach.\n\n"
+        "✍️ Escribe la contraseña para continuar:"
     )
+    keyboard = [[InlineKeyboardButton("❌ Cancelar", callback_data="volver_menu")]]
+    await query.edit_message_text(texto, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
+    return ESPERANDO_PASSWORD
 
+
+async def coach_password_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Verificar contraseña del coach"""
+    password = update.message.text.strip()
+
+    if password == COACH_PASSWORD:
+        context.user_data["coach_auth"] = True
+        await update.message.reply_text(
+            "✅ *Acceso concedido. Bienvenido Coach Alexis.* 🎮",
+            parse_mode="Markdown"
+        )
+        # Mostrar panel directamente
+        keyboard = [
+            [InlineKeyboardButton("📊 Ranking del Equipo", callback_data="coach_ranking")],
+            [InlineKeyboardButton("⚔️ Scrims de Entrenamiento", callback_data="coach_scrims_entren")],
+            [InlineKeyboardButton("🏆 Scrims de Liga", callback_data="coach_scrims_liga")],
+            [InlineKeyboardButton("📝 Registrar Scrim", callback_data="coach_add_scrim")],
+            [InlineKeyboardButton("💡 Tips de Coaching", callback_data="coach_tips")],
+            [InlineKeyboardButton("📈 Estadísticas Generales", callback_data="coach_stats")],
+            [InlineKeyboardButton("⬅️ Menú Principal", callback_data="volver_menu")],
+        ]
+        await update.message.reply_text(
+            "📋 *PANEL DEL COACH*\n━━━━━━━━━━━━━━━━━━━━━━\nSelecciona una opción:",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+    else:
+        await update.message.reply_text(
+            "❌ Contraseña incorrecta. Inténtalo de nuevo o presiona /menu para cancelar."
+        )
+        return ESPERANDO_PASSWORD
+
+    return ConversationHandler.END
+
+
+async def mostrar_panel_coach(query, context):
     keyboard = [
-        [InlineKeyboardButton("📊 Ver Ranking Completo", callback_data="coach_ranking")],
-        [InlineKeyboardButton("📅 Actividad del Equipo", callback_data="coach_actividad")],
-        [InlineKeyboardButton("🔄 Ver Todos los Planes", callback_data="coach_planes")],
-        [InlineKeyboardButton("📝 Tips para el Coach", callback_data="coach_tips")],
+        [InlineKeyboardButton("📊 Ranking del Equipo", callback_data="coach_ranking")],
+        [InlineKeyboardButton("⚔️ Scrims de Entrenamiento", callback_data="coach_scrims_entren")],
+        [InlineKeyboardButton("🏆 Scrims de Liga", callback_data="coach_scrims_liga")],
+        [InlineKeyboardButton("📝 Registrar Scrim", callback_data="coach_add_scrim")],
+        [InlineKeyboardButton("💡 Tips de Coaching", callback_data="coach_tips")],
+        [InlineKeyboardButton("📈 Estadísticas Generales", callback_data="coach_stats")],
         [InlineKeyboardButton("⬅️ Menú Principal", callback_data="volver_menu")],
     ]
-
-    await send(
-        texto,
+    await query.edit_message_text(
+        "📋 *PANEL DEL COACH*\n━━━━━━━━━━━━━━━━━━━━━━\nSelecciona una opción:",
         parse_mode="Markdown",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
@@ -52,141 +127,136 @@ async def coach_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     data = query.data
 
-    if data == "coach_menu":
-        await coach_menu(update, context)
+    if not context.user_data.get("coach_auth"):
+        await query.edit_message_text(
+            "🔐 Necesitas autenticarte primero.",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔑 Ir al Panel", callback_data="coach_menu")]])
+        )
         return
 
     if data == "coach_ranking":
-        await coach_ver_ranking(update, context)
-    elif data == "coach_actividad":
-        await coach_actividad(update, context)
-    elif data == "coach_planes":
-        await coach_planes(update, context)
+        await mostrar_ranking_coach(query)
+    elif data == "coach_scrims_entren":
+        await mostrar_scrims(query, "entrenamiento")
+    elif data == "coach_scrims_liga":
+        await mostrar_scrims(query, "liga")
     elif data == "coach_tips":
-        await coach_tips(update, context)
+        await mostrar_tips_coach(query)
+    elif data == "coach_stats":
+        await mostrar_estadisticas(query)
+    elif data == "coach_add_scrim":
+        await iniciar_registro_scrim(query, context)
+    elif data == "coach_back":
+        await mostrar_panel_coach(query, context)
 
 
-async def coach_ver_ranking(update, context):
-    query = update.callback_query
-
-    if not os.path.exists(RANKING_FILE):
+async def mostrar_ranking_coach(query):
+    ranking = cargar_ranking()
+    if not ranking:
         await query.edit_message_text(
-            "No hay datos de ranking aún.\nLos jugadores deben hacer exámenes primero. 📚",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Coach Panel", callback_data="coach_menu")]])
+            "📊 No hay datos de ranking aún. Los jugadores deben hacer exámenes.",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Panel", callback_data="coach_back")]])
         )
         return
-
-    with open(RANKING_FILE, "r") as f:
-        ranking = json.load(f)
 
     sorted_rank = sorted(ranking.items(), key=lambda x: x[1]["puntos_totales"], reverse=True)
+    medallas = ["🥇", "🥈", "🥉"]
+    texto = "📊 *RANKING COMPLETO DEL EQUIPO*\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
 
-    texto = "📊 *RANKING DETALLADO — COACH VIEW*\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
-
-    for i, (uid, datos) in enumerate(sorted_rank, 1):
+    for i, (uid, datos) in enumerate(sorted_rank):
+        medal = medallas[i] if i < 3 else f"#{i+1}"
         texto += (
-            f"{i}. *{datos['nombre']}*\n"
-            f"   Puntos: {datos['puntos_totales']} | Exámenes: {datos['examenes']}\n"
-            f"   Última actividad: {datos.get('ultima_actividad', 'N/A')}\n\n"
+            f"{medal} *{datos['nombre']}*\n"
+            f"   ⭐ {datos['puntos_totales']} pts | 📚 {datos['examenes']} exámenes\n"
+            f"   ⏰ {datos.get('ultima_actividad', 'Sin actividad')}\n\n"
         )
 
-    if not sorted_rank:
-        texto += "_No hay datos aún._"
-
-    await query.edit_message_text(
-        texto,
-        parse_mode="Markdown",
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Coach Panel", callback_data="coach_menu")]])
-    )
+    keyboard = [[InlineKeyboardButton("⬅️ Panel", callback_data="coach_back")]]
+    await query.edit_message_text(texto, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
 
 
-async def coach_actividad(update, context):
-    query = update.callback_query
+async def mostrar_scrims(query, tipo):
+    scrims = cargar_scrims()
+    lista = scrims.get(tipo, [])
+    tipo_txt = "ENTRENAMIENTO" if tipo == "entrenamiento" else "LIGA"
 
-    if not os.path.exists(RANKING_FILE):
+    if not lista:
         await query.edit_message_text(
-            "Sin actividad registrada aún.",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Coach Panel", callback_data="coach_menu")]])
+            f"📋 No hay scrims de {tipo_txt} registrados aún.\n\nUsa 'Registrar Scrim' para agregar.",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("📝 Registrar Scrim", callback_data="coach_add_scrim")],
+                [InlineKeyboardButton("⬅️ Panel", callback_data="coach_back")],
+            ])
         )
         return
 
-    with open(RANKING_FILE, "r") as f:
-        ranking = json.load(f)
-
-    sorted_by_activity = sorted(
-        ranking.items(),
-        key=lambda x: x[1].get("ultima_actividad", ""),
-        reverse=True
-    )
-
-    texto = "📅 *ACTIVIDAD RECIENTE DEL EQUIPO*\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
-
-    for uid, datos in sorted_by_activity:
-        ultima = datos.get("ultima_actividad", "Sin actividad")
-        examenes = datos.get("examenes", 0)
-        texto += f"👤 *{datos['nombre']}*\n  ⏰ {ultima} | 📚 {examenes} exámenes\n\n"
-
-    await query.edit_message_text(
-        texto,
-        parse_mode="Markdown",
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Coach Panel", callback_data="coach_menu")]])
-    )
-
-
-async def coach_planes(update, context):
-    query = update.callback_query
-
-    from data.entrenamiento import PLANES_INDIVIDUALES
-
-    texto = "🔄 *RESUMEN DE PLANES DE ENTRENAMIENTO*\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
-
-    for key, plan in PLANES_INDIVIDUALES.items():
-        fase = plan["fase_actual"]
-        total_fases = len(plan["fases"])
-        fase_data = plan["fases"].get(fase, {})
+    texto = f"⚔️ *SCRIMS DE {tipo_txt}*\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
+    for s in lista[-8:]:  # Últimos 8
         texto += (
-            f"👤 *{plan['nombre']}*\n"
-            f"   Fase {fase}/{total_fases}: {fase_data.get('titulo', '')[:40]}\n"
-            f"   Meta: {fase_data.get('meta', 'N/A')[:60]}\n\n"
+            f"📅 {s.get('fecha', 'N/A')} | {s.get('mapa', 'N/A')}\n"
+            f"👤 {s.get('jugador', 'N/A')} — {s.get('resultado', 'N/A')}\n"
+            f"🔫 Kills: {s.get('kills', 0)} | 💥 Daño: {s.get('daño', 0)}\n"
+            f"🏅 Posición: #{s.get('posicion', '?')}\n"
+            f"📝 {s.get('notas', '')}\n\n"
         )
 
-    await query.edit_message_text(
-        texto,
-        parse_mode="Markdown",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("🏋️ Ver planes completos", callback_data="entren")],
-            [InlineKeyboardButton("⬅️ Coach Panel", callback_data="coach_menu")],
-        ])
-    )
+    keyboard = [
+        [InlineKeyboardButton("📝 Registrar Nuevo", callback_data="coach_add_scrim")],
+        [InlineKeyboardButton("⬅️ Panel", callback_data="coach_back")],
+    ]
+    await query.edit_message_text(texto, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
 
 
-async def coach_tips(update, context):
-    query = update.callback_query
+async def mostrar_tips_coach(query):
+    import random
+    tips_seleccionados = random.sample(COACH_TIPS, min(5, len(COACH_TIPS)))
+    texto = "💡 *TIPS DE COACHING — BloodStrike Elite*\n━━━━━━━━━━━━━━━━━━━━━━\n\n"
+    for tip in tips_seleccionados:
+        texto += f"{tip}\n\n"
+
+    keyboard = [
+        [InlineKeyboardButton("🔄 Más Tips", callback_data="coach_tips")],
+        [InlineKeyboardButton("⬅️ Panel", callback_data="coach_back")],
+    ]
+    await query.edit_message_text(texto, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
+
+
+async def mostrar_estadisticas(query):
+    scrims = cargar_scrims()
+    entren = scrims.get("entrenamiento", [])
+    liga = scrims.get("liga", [])
+    ranking = cargar_ranking()
+
+    total_scrims = len(entren) + len(liga)
+    total_kills = sum(s.get("kills", 0) for s in entren + liga)
+    total_daño = sum(s.get("daño", 0) for s in entren + liga)
+    total_exams = sum(d.get("examenes", 0) for d in ranking.values())
 
     texto = (
-        "💡 *TIPS PARA EL COACH*\n"
+        "📈 *ESTADÍSTICAS GENERALES*\n"
         "━━━━━━━━━━━━━━━━━━━━━━\n\n"
-        "📌 *Gestión del equipo:*\n"
-        "• Haz scrims 3-4 veces/semana mínimo\n"
-        "• El VOD review post-scrim es MÁS importante que el scrim mismo\n"
-        "• Rota los roles en práctica para que todos entiendan a sus compañeros\n\n"
-        "📌 *Psicología de equipo:*\n"
-        "• Después de cada derrota: primero valida emociones, LUEGO analiza\n"
-        "• El feedback 1-a-1 privado es más efectivo que la crítica grupal\n"
-        "• Los jugadores jóvenes (14-16) necesitan más refuerzo positivo\n\n"
-        "📌 *Desarrollo individual:*\n"
-        "• Anderson (IGL, 15): dale liderazgo progresivo — que haga pequeñas calls primero\n"
-        "• Jose (Fragger, 14): motivación constante, ve sus progresos en SMG semana a semana\n"
-        "• Maxi (14): el más joven del roster 2 — necesita el ambiente más positivo\n"
-        "• Xavier: con más técnica de movimiento mejorará exponencialmente\n"
-        "• Alejandro: el más maduro — puede ser voz de liderazgo en el roster principal\n\n"
-        "📌 *Sobre el roster incompleto:*\n"
-        "• El rol que falta: considera un *Entry Fragger puro* o segundo *IGL de respaldo*\n"
-        "• Anderson 2 puede adaptarse — evalúalo en 2 semanas con roles diferentes"
+        f"⚔️ Total scrims registrados: *{total_scrims}*\n"
+        f"   • Entrenamiento: {len(entren)}\n"
+        f"   • Liga: {len(liga)}\n\n"
+        f"🔫 Kills totales del equipo: *{total_kills}*\n"
+        f"💥 Daño total del equipo: *{total_daño}*\n\n"
+        f"📚 Exámenes completados: *{total_exams}*\n"
+        f"👥 Jugadores activos en ranking: *{len(ranking)}*\n"
     )
 
-    await query.edit_message_text(
-        texto,
-        parse_mode="Markdown",
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Coach Panel", callback_data="coach_menu")]])
+    keyboard = [[InlineKeyboardButton("⬅️ Panel", callback_data="coach_back")]]
+    await query.edit_message_text(texto, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
+
+
+async def iniciar_registro_scrim(query, context):
+    texto = (
+        "📝 *REGISTRAR SCRIM*\n"
+        "━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "¿Qué tipo de scrim fue?"
     )
+    keyboard = [
+        [InlineKeyboardButton("🏋️ Scrim de Entrenamiento", callback_data="scrim_tipo_entrenamiento")],
+        [InlineKeyboardButton("🏆 Scrim de Liga", callback_data="scrim_tipo_liga")],
+        [InlineKeyboardButton("❌ Cancelar", callback_data="coach_back")],
+    ]
+    await query.edit_message_text(texto, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
